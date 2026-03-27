@@ -1,13 +1,14 @@
 <?xml version="1.0" ?>
-<sdf version="1.5">
+<sdf version="1.6">
   <model name="box">
     <static>true</static>
+    <allow_auto_disable>true</allow_auto_disable>
     <link name="link">
-      <pose frame=''>0 0 0.28 0 -0 0</pose>
+      <pose>0 0 0.28 0 0 0</pose>
       <collision name="collision">
         <geometry>
           <box>
-            <size>0.65 0.38 0.50 </size>
+            <size>0.65 0.38 0.5</size>
           </box>
         </geometry>
       </collision>
@@ -15,14 +16,13 @@
         <cast_shadows>false</cast_shadows>
         <geometry>
           <box>
-            <size>0.65 0.38 0.50 </size>
+            <size>0.65 0.38 0.5</size>
           </box>
         </geometry>
         <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/Black</name>
-          </script>
+          <ambient>0.02 0.02 0.02 1</ambient>
+          <diffuse>0.05 0.05 0.05 1</diffuse>
+          <specular>0.1 0.1 0.1 1</specular>
         </material>
       </visual>
     </link>

@@ -1,0 +1,1 @@
+/home/ttrindader/lar_gazebo_ws/lar_gazebo/build/lar_gazebo/ament_cmake_environment_hooks/local_setup.sh
