@@ -17,6 +17,12 @@
 
     <plugin filename="libignition-gazebo-navsat-system.so" name="ignition::gazebo::systems::NavSat"></plugin>
 
+    <include>
+      <uri>model://tag36_11_00000</uri> <!-- Tag family and ID: 36h11, ID 0 -->
+      <name>apriltag_0</name>
+      <pose>0 0 0.1 0 0 1.5708</pose> <!-- x y z roll pitch yaw -->
+    </include>
+
     <gravity>0 0 -9.8</gravity>
     <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
     <atmosphere type="adiabatic" />

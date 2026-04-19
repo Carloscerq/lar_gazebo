@@ -30,8 +30,7 @@ def generate_launch_description():
 
     models_path = os.path.join(pkg_lar_gazebo, "models")
     worlds_path = os.path.join(pkg_lar_gazebo, "worlds")
-    world_file_path = os.path.join(worlds_path, "lar")
-    print(f"Using world file: {world_file_path}")
+    world_name = "lar"
 
     clearpath_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -40,7 +39,10 @@ def generate_launch_description():
         launch_arguments={
             "setup_path": LaunchConfiguration("setup_path"),
             "use_sim_time": LaunchConfiguration("use_sim_time"),
-            "world": world_file_path,
+            "world": world_name,
+            "x": "0.0",
+            "y": "0.0",
+            "yaw": "0.0",
         }.items(),
     )
 
