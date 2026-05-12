@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <sdf version="1.6">
   <world name="default">
+    <plugin filename="ignition-gazebo-collada-world-exporter-system"
+        name="ignition::gazebo::systems::ColladaWorldExporter">
+    </plugin>
     <plugin filename="libignition-gazebo-physics-system.so"
       name="ignition::gazebo::systems::Physics"></plugin>
     <plugin filename="libignition-gazebo-user-commands-system.so"
@@ -16,6 +19,12 @@
     <plugin filename="libignition-gazebo-imu-system.so" name="ignition::gazebo::systems::Imu"></plugin>
 
     <plugin filename="libignition-gazebo-navsat-system.so" name="ignition::gazebo::systems::NavSat"></plugin>
+
+    <include>
+      <uri>model://Apriltag36_11_00000</uri> <!-- Tag family and ID: 36h11, ID 0 -->
+      <name>apriltag_0</name>
+      <pose>2.0 0.0 1.0 0.0 0.0 1.5708</pose>
+    </include>
 
     <gravity>0 0 -9.8</gravity>
     <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>

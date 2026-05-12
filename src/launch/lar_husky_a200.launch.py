@@ -27,11 +27,15 @@ def generate_launch_description():
         default_value="true",
         description="Use simulation (Gazebo) clock",
     )
-
     models_path = os.path.join(pkg_lar_gazebo, "models")
     worlds_path = os.path.join(pkg_lar_gazebo, "worlds")
     world_file_path = os.path.join(worlds_path, "lar")
-    print(f"Using world file: {world_file_path}")
+
+    world_arg = DeclareLaunchArgument(
+        "world",
+        default_value=world_file_path,
+        description="Path to Gazebo world file",
+    )
 
     clearpath_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -40,7 +44,10 @@ def generate_launch_description():
         launch_arguments={
             "setup_path": LaunchConfiguration("setup_path"),
             "use_sim_time": LaunchConfiguration("use_sim_time"),
-            "world": world_file_path,
+            "world": LaunchConfiguration("world"),
+            "x": "0.0",
+            "y": "0.0",
+            "yaw": "0.0",
         }.items(),
     )
 
@@ -48,6 +55,7 @@ def generate_launch_description():
         [
             setup_path_arg,
             use_sim_time_arg,
+            world_arg,
             AppendEnvironmentVariable("IGN_GAZEBO_RESOURCE_PATH", models_path),
             AppendEnvironmentVariable("IGN_GAZEBO_RESOURCE_PATH", worlds_path),
             AppendEnvironmentVariable("GZ_SIM_RESOURCE_PATH", models_path),
