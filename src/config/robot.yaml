@@ -19,11 +19,15 @@ sensors:
       xyz: [0.0, 0.0, 0.8] 
       rpy: [0.0, 0.0, 0.0]
   camera:
-    - model: flir_blackfly # Standard Machine Vision Mono Camera
+    - model: stereolabs_zed # ZED stereo camera (matches the real robot)
       urdf_enabled: true
       launch_enabled: true
+      device_type: zed2 # one of: zed, zedm, zed2, zed2i, zedx, zedxm
+      serial: 0
+      fps: 30
+      resolution: AUTO # AUTO | HD2K | HD1080 | HD720 | VGA
       parent: "default_mount"
-      xyz: [0.45, 0.0, 0.2] 
+      xyz: [0.45, 0.0, 0.2]
       rpy: [0.0, 0.0, 0.0]
   gps:
     - model: garmin_18x
