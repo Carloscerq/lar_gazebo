@@ -8,8 +8,20 @@ from launch.actions import (
     AppendEnvironmentVariable,
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
+
+
+def _flag(config_name, flag, when='false'):
+    """Emit ``flag`` (plus a trailing space) only when ``config_name`` == ``when``.
+
+    Used to splice optional ``gz sim`` switches into the gz_args string, which
+    has to stay a substitution list -- launch arguments are not resolved at
+    generate_launch_description() time.
+    """
+    return PythonExpression([
+        "'", flag, " ' if '", LaunchConfiguration(config_name), "' == '", when, "' else ''",
+    ])
 
 
 def generate_launch_description():
@@ -47,6 +59,19 @@ def generate_launch_description():
         default_value="true",
         description="Use simulation (Gazebo) clock",
     )
+    gui_arg = DeclareLaunchArgument(
+        "gui",
+        default_value="true",
+        description="Show the Gazebo GUI. false runs the server only (gz sim -s); "
+                    "physics and sensors still run, so Unity keeps getting data.",
+    )
+    headless_rendering_arg = DeclareLaunchArgument(
+        "headless_rendering",
+        default_value="false",
+        description="Render the camera/LiDAR sensors through EGL instead of a "
+                    "display (gz sim --headless-rendering). Needed with gui:=false "
+                    "over SSH or on a machine with no X session.",
+    )
 
     models_path = os.path.join(pkg_lar_gazebo, "models")
     worlds_path = os.path.join(pkg_lar_gazebo, "worlds")
@@ -68,7 +93,12 @@ def generate_launch_description():
             os.path.join(pkg_ros_gz_sim, "launch", "gz_sim.launch.py")
         ),
         launch_arguments={
-            "gz_args": ["-r -v 4 ", world_file],
+            "gz_args": [
+                "-r -v 4 ",
+                _flag("gui", "-s", when="false"),
+                _flag("headless_rendering", "--headless-rendering", when="true"),
+                world_file,
+            ],
             "on_exit_shutdown": "true",
         }.items(),
     )
@@ -98,6 +128,8 @@ def generate_launch_description():
         [
             setup_path_arg,
             use_sim_time_arg,
+            gui_arg,
+            headless_rendering_arg,
             AppendEnvironmentVariable("GZ_SIM_RESOURCE_PATH", models_path),
             AppendEnvironmentVariable("GZ_SIM_RESOURCE_PATH", worlds_path),
             AppendEnvironmentVariable("GZ_SIM_RESOURCE_PATH", pkg_lar_gazebo),
