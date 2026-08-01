@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<!--
+  The observer camera: a stand-in for the mixed-reality headset, at the eye
+  height of a standing person. It is what intermittently sees the AprilTag on
+  the Husky, so the Kalman filter has something to correct against.
+
+  Static on purpose. husky_bringup's head_teleop node moves it by calling
+  Gazebo's set_pose service every tick, the way a tracked headset reports an
+  absolute pose. A dynamic model would need gravity disabled and collisions
+  stripped anyway, and would still let the solver argue with the teleport.
+-->
+<sdf version="1.8">
+  <model name="observer_cam">
+    <static>true</static>
+    <link name="link">
+
+      <!--
+        A small visible marker. Without it the observer is invisible in the
+        Gazebo GUI and there is no way to see where you have walked it to,
+        which makes setting up a viewpoint needlessly blind. It sits behind the
+        camera's near clip plane, so it never appears in the camera's own view.
+      -->
+      <visual name="marker">
+        <geometry>
+          <box><size>0.06 0.14 0.05</size></box>
+        </geometry>
+        <material>
+          <ambient>0.1 0.1 0.1 1</ambient>
+          <diffuse>0.15 0.15 0.15 1</diffuse>
+        </material>
+      </visual>
+
+      <sensor name="cam" type="camera">
+        <camera>
+          <!--
+            1.4 rad is about 80 deg horizontal, in the region of what a Quest 3
+            passthrough view covers. It is the number to change if you want to
+            study how field of view affects how often the tag is in frame.
+          -->
+          <horizontal_fov>1.4</horizontal_fov>
+          <image>
+            <width>1280</width>
+            <height>720</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>100</far>
+          </clip>
+        </camera>
+        <always_on>1</always_on>
+        <update_rate>30</update_rate>
+        <topic>observer/image</topic>
+        <!--
+          Without gz_frame_id the bridged camera_info carries a frame_id that
+          nothing in the TF tree matches, and apriltag_ros' output cannot be
+          transformed anywhere. This must agree with head_teleop's
+          optical_frame parameter.
+        -->
+        <gz_frame_id>observer_cam</gz_frame_id>
+      </sensor>
+    </link>
+  </model>
+</sdf>

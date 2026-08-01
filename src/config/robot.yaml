@@ -10,6 +10,13 @@ system:
     domain_id: 0
 platform:
   model: husky
+  extras:
+    # Welds the AprilTag onto the chassis so the observer camera has something
+    # to measure the robot's pose from. clearpath_generator_common <xacro:include>s
+    # this into the generated robot description.
+    urdf:
+      package: lar_gazebo
+      path: urdf/apriltag.urdf.xacro
 sensors:
   lidar3d:
     - model: velodyne_lidar

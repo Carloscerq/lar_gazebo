@@ -1,0 +1,145 @@
+<?xml version="1.0"?>
+<!--
+  AprilTag marker mounted on the robot, so an observer camera (the stand-in for
+  the headset) can measure the robot's pose directly.
+
+  Pulled into the Clearpath-generated URDF via robot.yaml:
+
+      platform:
+        extras:
+          urdf:
+            package: lar_gazebo
+            path: urdf/apriltag.urdf.xacro
+
+  clearpath_generator_common only emits a xacro:include for the extras file, it
+  does not call anything in it, so this file both defines the macro and
+  instantiates it.
+
+  SIZING, the thing that silently breaks pose estimates:
+  apriltag_ros' `size` parameter is the edge of the *black square*, not the edge
+  of the printed plate. A tag36h11 image is a 10x10 grid: 1 cell of white quiet
+  zone on each side, leaving 8 cells of black square. So the plate has to be
+  10/8 = 1.25x the declared tag size. Get this wrong and detections still look
+  perfectly healthy while reporting a range that is off by that exact ratio.
+  The macro takes the *black square* size and derives the plate, so the number
+  here matches config/tags_36h11.yaml directly.
+
+  NOTE: no double hyphen may appear anywhere in these comments. XML forbids it,
+  and xacro reports it as an unhelpful "not well-formed (invalid token)".
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+    name   link name (a fixed joint <name>_joint is created alongside)
+    parent link to weld to
+    size   black square edge length in metres; must equal the `sizes` entry for
+           this id in husky_bringup/config/tags_36h11.yaml
+    xyz    tag centre relative to parent
+    rpy    orientation. The plate lies in its own XY plane with the printed face
+           looking along +Z, so rpy aims that +Z axis at the observer.
+  -->
+  <xacro:macro name="apriltag_marker"
+               params="name parent size:=0.2 xyz:='0 0 0' rpy:='0 0 0'">
+
+    <!-- 10/8 quiet zone correction, see header. -->
+    <xacro:property name="plate" value="${size * 10.0 / 8.0}"/>
+    <!-- Thin enough to read as a sticker, thick enough to avoid z-fighting
+         with the chassis surface it sits on. -->
+    <xacro:property name="thickness" value="0.002"/>
+
+    <link name="${name}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${plate} ${plate} ${thickness}"/>
+        </geometry>
+      </visual>
+      <!-- No collision element: the tag is a decal. Giving it collision
+           geometry would let it catch on the world and shove the robot. -->
+      <!-- URDF requires inertia on every link, but this link is welded to the
+           chassis with a fixed joint, so the value is nominal. KDL just
+           refuses to parse a zero mass link. -->
+      <inertial>
+        <mass value="0.001"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="1e-6" ixy="0.0" ixz="0.0" iyy="1e-6" iyz="0.0" izz="1e-6"/>
+      </inertial>
+    </link>
+
+    <joint name="${name}_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${name}"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+    </joint>
+
+    <!--
+      The tag bitmap itself. A plain URDF material cannot carry a texture, so
+      the image is attached through a gazebo reference PBR override, which
+      sdformat copies onto the generated SDF visual.
+
+      Lighting is deliberately flat: specular is killed and roughness maxed so
+      the warehouse spotlights cannot throw a highlight across the pattern.
+
+      emissive stays at 0. Raising it to lift the tag out of shadow also lifts
+      the black cells by the same amount, which is worse than the problem it
+      solves: the detector thresholds on local black/white contrast, so a
+      washed out tag is one it simply drops, intermittently and as a function
+      of viewing angle. Measured at emissive 0.4 the black cells came back as
+      mid grey. Leave it dark and let ambient do the work.
+    -->
+    <gazebo reference="${name}">
+      <visual>
+        <material>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+          <specular>0 0 0 1</specular>
+          <emissive>0 0 0 1</emissive>
+          <pbr>
+            <metal>
+              <albedo_map>package://lar_gazebo/models/apriltag_36h11/materials/textures/tag36_11_00000.png</albedo_map>
+              <roughness>1.0</roughness>
+              <metalness>0.0</metalness>
+            </metal>
+          </pbr>
+        </material>
+      </visual>
+    </gazebo>
+
+  </xacro:macro>
+
+  <!--
+    Sat flush against the rear panel of the chassis, like a decal on the
+    bodywork, so it moves with the robot instead of hovering behind it.
+
+    The numbers come from the a200 chassis mesh, which spans
+    x[-0.406, +0.406] y[-0.285, +0.285] z[-0.003, +0.224] in the base_link
+    frame (measured from clearpath_platform_description/meshes/a200):
+
+      x = -0.407   rear face at -0.406, minus half the 0.002 plate thickness,
+                   so the printed side sits on the panel rather than inside it
+      z =  0.112   vertical centre of the 0.224 m tall panel
+
+    Tag size follows from that panel height. The plate is 10/8 of the declared
+    size (see the header), so the 0.16 m tag here means a 0.20 m plate, which
+    leaves about 12 mm of bodywork above and below. Anything larger would poke
+    out past the roofline and stop looking like part of the robot.
+
+    Keep this in step with husky_bringup/config/tags_36h11.yaml, which must
+    also say 0.16.
+
+    rpy rotates the plate's +Z (its printed face) from world +Z round to minus X:
+    pitch of minus 90 deg points it along minus X, then roll of minus 90 deg
+    brings the tag's "up" back to vertical so the id reads the right way round.
+
+    A single rear tag means the observer only sees the robot when its back is
+    turned, which is exactly the intermittent visibility regime this experiment
+    is about, so it is the right default. Add more faces by instantiating the
+    macro again with a different name and id.
+  -->
+  <xacro:apriltag_marker name="apriltag_0"
+                         parent="base_link"
+                         size="0.16"
+                         xyz="-0.407 0 0.112"
+                         rpy="${-pi/2} 0 ${-pi/2}"/>
+
+</robot>
